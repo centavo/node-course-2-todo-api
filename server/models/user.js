@@ -39,6 +39,7 @@ UserSchema.methods.toJSON = function () {
   return _.pick(userObject, ['_id', 'email']);
 };
 
+//Instance method - gets called with the instance of the document - ie user = this
 UserSchema.methods.generateAuthToken = function () {
   var user = this;
   var access = 'auth';
@@ -47,6 +48,29 @@ UserSchema.methods.generateAuthToken = function () {
   user.tokens = user.tokens.concat([{access, token}]);
   return user.save().then(() => {
     return token;
+  });
+};
+
+//Model method - model methods get called with the model as the 'this' binding, hence User = this
+UserSchema.statics.findByToken = function(token) {
+  var User = this;
+  var decoded;
+//jwt call will throw error if token doesn't match, hence need for try catch block
+  try {
+    decoded = jwt.verify(token, 'abc123');
+  } catch(e) {
+    // can simplify code below - instead of returning new promise and reject straight away
+    // can use one line.  Could be argument in reject('test') which would become the value
+    // of (e) in the .catch clause when findByToken is called in server.js
+    return Promise.reject();
+    // return new Promise((resolve, reject) => {
+    //   reject();
+    // });
+  }
+  return User.findOne({
+    '_id': decoded._id, //quotes not needed since no . in value - put in for consistency
+    'tokens.token': token, //quotes used to query a nested property
+    'tokens.access': 'auth'
   });
 };
 
