@@ -44,7 +44,7 @@ UserSchema.methods.toJSON = function () {
 UserSchema.methods.generateAuthToken = function () {
   var user = this;
   var access = 'auth';
-  var token = jwt.sign({_id: user._id.toHexString(), access}, 'abc123').toString();
+  var token = jwt.sign({_id: user._id.toHexString(), access}, process.env.JWT_SECRET).toString();
   // user.tokens.push({access, token})  //changed as there were some issues with diff versions of MondgoDB
   user.tokens = user.tokens.concat([{access, token}]);
   return user.save().then(() => {
@@ -67,7 +67,7 @@ UserSchema.statics.findByToken = function(token) {
   var decoded;
 //jwt call will throw error if token doesn't match, hence need for try catch block
   try {
-    decoded = jwt.verify(token, 'abc123');
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch(e) {
     // can simplify code below - instead of returning new promise and reject straight away
     // can use one line.  Could be argument in reject('test') which would become the value
